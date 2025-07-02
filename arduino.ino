@@ -8,9 +8,9 @@
 String inputString = "";
 bool stringComplete = false;
 
-double Kp = 0.40;  // Reduce by 20% (smoother response)
-double Ki = 0.18;  // Slightly increase to maintain rejection
-double Kd = 0.042; // More damping
+double Kp = 2;  // Reduce by 20% (smoother response)
+double Ki = 2;  // Slightly increase to maintain rejection
+double Kd = 0.0001; // More damping
 double integral =0;
 double previous=0;
 
@@ -109,14 +109,31 @@ void processCommand(String cmd) {
     position = 0;
     TIMES_DT = 0;
   }
-  else if(command ="M0")
+  else if(command ="S")
   {
-    int xIndex = params.indexOf('S');
+    int xIndex = params.indexOf('V');
     if (xIndex != -1)
     {int spaceAfterX = params.indexOf(' ', xIndex);
     String xStr = params.substring(xIndex + 1, (spaceAfterX == -1) ? params.length() : spaceAfterX);
     speed = xStr.toFloat();}
+
+    int PID_INDEX_KP  = params.indexOf('P');
+    int PID_INDEX_KI  = params.indexOf('I');
+    int PID_INDEX_KD  = params.indexOf('D');
+    if (PID_INDEX_KP != -1)
+    {int spaceAfterX = params.indexOf(' ', PID_INDEX_KP);
+    String xStr = params.substring(PID_INDEX_KP + 1, (spaceAfterX == -1) ? params.length() : spaceAfterX);
+    Kp = xStr.toDouble();}
+    if (PID_INDEX_KI != -1)
+    {int spaceAfterX = params.indexOf(' ', PID_INDEX_KI);
+    String xStr = params.substring(PID_INDEX_KI + 1, (spaceAfterX == -1) ? params.length() : spaceAfterX);
+    Ki = xStr.toDouble();}
+    if (PID_INDEX_KD != -1)
+    {int spaceAfterX = params.indexOf(' ', PID_INDEX_KD);
+    String xStr = params.substring(PID_INDEX_KD + 1, (spaceAfterX == -1) ? params.length() : spaceAfterX);
+    Kd = xStr.toDouble();}
   }
+
   else {
     Serial.println("Unknown macro!");
     return;
@@ -137,7 +154,7 @@ double PID_Correction(double err)
 {
   double proportional = err*Kp;
   integral += err *dt*Ki;
-  integral = clam(integral,0,255);
+  integral = clam(integral,-255,255);
   double derivative =Kd*(err-previous)/dt;
   double output = proportional+integral+derivative;
   return output;
@@ -170,51 +187,21 @@ void loop() {
   
 
   double error = speed - RPM_FILTERED ;
-  double output = PID_Correction(error*10);
-    
-  output = clam(output, 0, 255);
+  double output = PID_Correction(error);
+  output = clam(output,0,255);
+  
 
 
     analogWrite(Motor_1,output);
     analogWrite(Motor_2,0);
-    Serial.print(speed);
+    Serial.print(speed,4);
     Serial.print(" ");
-    Serial.print(RPM_FILTERED);
+    Serial.print(RPM_FILTERED,4);
     Serial.print(" ");
-    Serial.println(output);
-    
-    //Serial.print(current_time);
-    //Serial.print(",");
-    
-
-   
-    
-
- 
+    Serial.println(output,4);
 
   
-  
-
-  
-  //Serial.println(PID_Correction(error));
-
-  //Serial.println(error);
-
-  //Serial.println(forward);
-  //Serial.println(rotations);
-  //if(rotations>forward )
-  //{
-    //analogWrite(Motor_1,0);
-    //analogWrite(Motor_2,0); 
-  //forward=0;
-  //times = 0;
-  //}
-  //else if(rotations<forward)
-    //{
-      //analogWrite(Motor_1,val);
-      //analogWrite(Motor_2,0);
-      
-  //}
+    
   
 
 }
